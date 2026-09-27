@@ -1,0 +1,63 @@
+name: waha
+
+services:
+  waha:
+    image: devlikeapro/waha:${WAHA_IMAGE_TAG:-gows}
+    container_name: waha
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    # Published only on the server LAN IP, never on 0.0.0.0
+    ports:
+      - '${WAHA_LAN_IP:?define WAHA_LAN_IP}:${WAHA_LAN_PORT:-3000}:3000/tcp'
+    networks:
+      - waha_net
+    volumes:
+      - waha_sessions:/app/.sessions
+      - waha_media:/app/.media
+    environment:
+      TZ: Europe/Lisbon
+      WHATSAPP_DEFAULT_ENGINE: GOWS
+      WAHA_BASE_URL: http://waha:3000
+      WAHA_LOG_LEVEL: info
+      WAHA_PRINT_QR: 'false'
+      WHATSAPP_RESTART_ALL_SESSIONS: 'True'
+
+      WAHA_API_KEY: ${WAHA_API_KEY:?define WAHA_API_KEY}
+      WAHA_DASHBOARD_ENABLED: 'true'
+      WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
+      WAHA_DASHBOARD_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:?define WAHA_DASHBOARD_PASSWORD}
+      WHATSAPP_SWAGGER_ENABLED: 'true'
+      WHATSAPP_SWAGGER_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
+      WHATSAPP_SWAGGER_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:?define WAHA_DASHBOARD_PASSWORD}
+
+      WHATSAPP_HOOK_URL: ${OSTEOGEST_WEBHOOK_URL:-}
+      WHATSAPP_HOOK_EVENTS: session.status,message,message.ack
+      WHATSAPP_HOOK_HMAC_KEY: ${WAHA_HOOK_HMAC_KEY:?define WAHA_HOOK_HMAC_KEY}
+      WHATSAPP_HOOK_RETRIES_POLICY: exponential
+      WHATSAPP_HOOK_RETRIES_DELAY_SECONDS: '2'
+      WHATSAPP_HOOK_RETRIES_ATTEMPTS: '10'
+
+      WAHA_MEDIA_STORAGE: LOCAL
+      WHATSAPP_FILES_FOLDER: /app/.media
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:3000/ping']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: '5'
+
+networks:
+  # Shared with the Osteogest stack (declare it there as external)
+  waha_net:
+    name: waha_net
+
+volumes:
+  waha_sessions:
+  waha_media:
