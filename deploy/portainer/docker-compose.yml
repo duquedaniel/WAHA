@@ -1,9 +1,7 @@
-name: waha
-
 services:
   waha:
     image: devlikeapro/waha:${WAHA_IMAGE_TAG:-gows}
-    container_name: waha
+    container_name: ${WAHA_CONTAINER_NAME:-waha}
     restart: unless-stopped
     dns:
       - 1.1.1.1
@@ -19,11 +17,12 @@ services:
     environment:
       TZ: Europe/Lisbon
       WHATSAPP_DEFAULT_ENGINE: GOWS
-      WAHA_BASE_URL: http://waha:3000
+      WAHA_BASE_URL: http://${WAHA_CONTAINER_NAME:-waha}:3000
       WAHA_LOG_LEVEL: info
       WAHA_PRINT_QR: 'false'
       WHATSAPP_RESTART_ALL_SESSIONS: 'True'
 
+      # Admin (master) key: provisioning only, never given to an Osteogest deployment
       WAHA_API_KEY: ${WAHA_API_KEY:?define WAHA_API_KEY}
       WAHA_DASHBOARD_ENABLED: 'true'
       WAHA_DASHBOARD_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
@@ -32,13 +31,7 @@ services:
       WHATSAPP_SWAGGER_USERNAME: ${WAHA_DASHBOARD_USERNAME:-admin}
       WHATSAPP_SWAGGER_PASSWORD: ${WAHA_DASHBOARD_PASSWORD:?define WAHA_DASHBOARD_PASSWORD}
 
-      WHATSAPP_HOOK_URL: ${OSTEOGEST_WEBHOOK_URL:-}
-      WHATSAPP_HOOK_EVENTS: session.status,message,message.ack
-      WHATSAPP_HOOK_HMAC_KEY: ${WAHA_HOOK_HMAC_KEY:?define WAHA_HOOK_HMAC_KEY}
-      WHATSAPP_HOOK_RETRIES_POLICY: exponential
-      WHATSAPP_HOOK_RETRIES_DELAY_SECONDS: '2'
-      WHATSAPP_HOOK_RETRIES_ATTEMPTS: '10'
-
+      # No global webhook: each clinic session gets its own webhook URL + HMAC key
       WAHA_MEDIA_STORAGE: LOCAL
       WHATSAPP_FILES_FOLDER: /app/.media
     healthcheck:
@@ -54,9 +47,9 @@ services:
         max-file: '5'
 
 networks:
-  # Shared with the Osteogest stack (declare it there as external)
+  # Shared with the Osteogest stacks (declare it there as external)
   waha_net:
-    name: waha_net
+    name: ${WAHA_NETWORK:-waha_net}
 
 volumes:
   waha_sessions:
