@@ -1,0 +1,37 @@
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+    root /usr/share/nginx/html;
+    index index.html;
+    client_max_body_size 1m;
+    expires -1;
+
+    # Docker DNS: resolve WAHA lazily so the backoffice starts even if WAHA is down
+    resolver 127.0.0.11 valid=30s ipv6=off;
+    set $waha_upstream ${WAHA_UPSTREAM};
+
+    add_header Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "no-referrer" always;
+
+    # Only the endpoints the backoffice needs are proxied to WAHA
+    location ~ ^/api/(sessions|keys)(/|$) {
+        proxy_pass http://$waha_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_hide_header Access-Control-Allow-Origin;
+        proxy_hide_header Access-Control-Expose-Headers;
+        proxy_read_timeout 60s;
+    }
+
+    location /api/ {
+        return 404;
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+}

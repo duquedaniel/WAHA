@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>WAHA · Backoffice de clínicas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>WAHA · Backoffice de clínicas</h1>
+    <div class="topbar-actions" id="topbar-actions" hidden>
+      <span class="muted" id="server-label"></span>
+      <button type="button" class="btn btn-ghost" id="btn-logout">Terminar sessão</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="card narrow" id="login-view">
+      <h2>Entrar</h2>
+      <p class="muted">Introduza a chave admin do WAHA (<code>WAHA_API_KEY</code> da stack). A chave fica apenas nesta aba do browser.</p>
+      <form id="login-form" autocomplete="off">
+        <label id="server-field" hidden>
+          Servidor WAHA
+          <input type="url" id="login-server" placeholder="http://192.168.200.6:3000">
+        </label>
+        <label>
+          Chave admin
+          <input type="password" id="login-key" required minlength="8" autocomplete="off">
+        </label>
+        <button type="submit" class="btn btn-primary">Entrar</button>
+      </form>
+    </section>
+
+    <section id="app-view" hidden>
+      <div class="toolbar">
+        <button type="button" class="btn btn-primary" id="btn-new-clinic">+ Nova clínica</button>
+        <button type="button" class="btn" id="btn-refresh">Atualizar</button>
+        <span class="muted" id="last-refresh"></span>
+      </div>
+
+      <section class="card">
+        <h2>Clínicas (sessões)</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sessão</th>
+                <th>Clínica</th>
+                <th>Estado</th>
+                <th>Número ligado</th>
+                <th>Chaves ativas</th>
+                <th class="right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="sessions-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Chaves de API</h2>
+        <p class="muted">A chave admin da stack não aparece aqui. As chaves de clínica só dão acesso à respetiva sessão.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Sessão</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Permissões</th>
+                <th>Chave</th>
+                <th class="right">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="keys-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <dialog id="dlg-new-clinic">
+    <form id="new-clinic-form" autocomplete="off">
+      <h2>Nova clínica</h2>
+      <p class="muted">Cria a sessão WhatsApp (parada, sem número) e uma chave restrita a essa sessão. O número é ligado depois, no backoffice do Osteogest.</p>
+      <label>
+        Nome da sessão
+        <input type="text" id="nc-session" required maxlength="64" pattern="[a-zA-Z0-9_\-]+" placeholder="osteogest-vilma">
+        <small class="muted">Letras, números, "-" ou "_".</small>
+      </label>
+      <label>
+        Nome da clínica
+        <input type="text" id="nc-clinic" maxlength="100" placeholder="Clínica Vilma">
+      </label>
+      <label>
+        URL interno do WAHA (para o Osteogest)
+        <input type="url" id="nc-waha-url" required value="http://waha:3000">
+      </label>
+      <label>
+        URL de callback do Osteogest (webhook, interno)
+        <input type="url" id="nc-callback" value="http://osteogest:3000/api/webhooks/waha">
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn btn-primary">Criar clínica</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-credentials">
+    <div>
+      <h2>Dados para o backoffice do Osteogest</h2>
+      <p class="warning">Copie a chave agora e guarde-a num gestor de passwords. Introduza estes valores em <strong>Configurações → Integrações → WhatsApp</strong> do Osteogest da clínica.</p>
+      <div id="credentials-list" class="credentials"></div>
+      <div class="dialog-actions">
+        <button type="button" class="btn btn-primary" data-close>Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="dlg-delete-clinic">
+    <form id="delete-clinic-form" autocomplete="off">
+      <h2>Apagar clínica</h2>
+      <p class="warning">Isto termina a sessão WhatsApp (desliga o número), apaga os dados da sessão no WAHA e revoga todas as chaves desta clínica. Não pode ser desfeito.</p>
+      <label>
+        Escreva <strong id="delete-clinic-name"></strong> para confirmar
+        <input type="text" id="delete-clinic-confirm" required>
+      </label>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancelar</button>
+        <button type="submit" class="btn btn-danger">Apagar definitivamente</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

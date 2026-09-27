@@ -1,0 +1,34 @@
+services:
+  waha-backoffice:
+    build:
+      context: .
+    image: waha-backoffice:local
+    pull_policy: build
+    container_name: ${BACKOFFICE_CONTAINER_NAME:-waha-backoffice}
+    restart: unless-stopped
+    # Published only on the server LAN IP, never on 0.0.0.0
+    ports:
+      - '${WAHA_LAN_IP:?define WAHA_LAN_IP}:${BACKOFFICE_PORT:-3100}:8080/tcp'
+    environment:
+      WAHA_UPSTREAM: ${WAHA_UPSTREAM:-waha:3000}
+    networks:
+      - waha_net
+    read_only: true
+    # nginx-unprivileged runs as uid/gid 101 and renders its config at startup
+    tmpfs:
+      - /tmp:uid=101,gid=101
+      - /etc/nginx/conf.d:uid=101,gid=101
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+
+networks:
+  waha_net:
+    name: ${WAHA_NETWORK:-waha_net}
+    external: true
