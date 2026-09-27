@@ -9,7 +9,8 @@ Usage:
   $0 list [waha-url]                    list sessions and API keys
   $0 revoke <key-id> [waha-url]         delete an API key
 
-The admin key is read from WAHA_ADMIN_KEY (or prompted). Default waha-url: http://localhost:3000
+The admin key is read from WAHA_ADMIN_KEY (or prompted).
+waha-url defaults to \$WAHA_URL, then http://192.168.200.6:3002 (host LAN port, not the internal waha:3000).
 Session name: letters, digits, "-" or "_" (e.g. osteogest-vilma).
 EOF
   exit 1
@@ -17,6 +18,7 @@ EOF
 
 [[ $# -ge 1 ]] || usage
 ACTION="$1"
+DEFAULT_URL="${WAHA_URL:-http://192.168.200.6:3002}"
 
 if [[ -z "${WAHA_ADMIN_KEY:-}" ]]; then
   read -r -s -p "WAHA admin API key: " WAHA_ADMIN_KEY
@@ -40,7 +42,7 @@ case "$ACTION" in
   create)
     [[ $# -ge 2 ]] || usage
     SESSION="$2"
-    WAHA_URL="${3:-http://localhost:3000}"
+    WAHA_URL="${3:-$DEFAULT_URL}"
     if [[ ! "$SESSION" =~ ^[a-zA-Z0-9_-]+$ ]]; then
       echo "Invalid session name: $SESSION" >&2
       exit 1
@@ -63,7 +65,7 @@ case "$ACTION" in
     echo "Store the key in a password manager. It will not be shown again by this script."
     ;;
   list)
-    WAHA_URL="${2:-http://localhost:3000}"
+    WAHA_URL="${2:-$DEFAULT_URL}"
     echo "Sessions:"
     call GET "$WAHA_URL/api/sessions?all=true" | pretty
     echo "API keys:"
@@ -71,7 +73,7 @@ case "$ACTION" in
     ;;
   revoke)
     [[ $# -ge 2 ]] || usage
-    WAHA_URL="${3:-http://localhost:3000}"
+    WAHA_URL="${3:-$DEFAULT_URL}"
     call DELETE "$WAHA_URL/api/keys/$2" | pretty
     ;;
   *)
